@@ -49,8 +49,7 @@ public class ReactiveApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.get(new URI("/bang"))
 				.accept(MediaType.APPLICATION_JSON).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-		// Really?
-		assertThat(result.getBody()).isEqualTo(null);
+		assertThat(result.getBody()).contains("status");
 	}
 
 	@Test
@@ -72,15 +71,14 @@ public class ReactiveApplicationTests {
 	public void sentences() throws Exception {
 		assertThat(rest
 				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
-				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				.getBody()).isEqualTo("go,homecome,back");
 	}
 
 	@Test
 	public void sentencesAcceptAny() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
-				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				String.class).getBody()).isEqualTo("go,homecome,back");
 	}
 
 	@Test

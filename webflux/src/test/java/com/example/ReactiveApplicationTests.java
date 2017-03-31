@@ -60,8 +60,7 @@ public class ReactiveApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.get(new URI("/bang"))
 				.accept(MediaType.APPLICATION_JSON).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-		// Really?
-		assertThat(result.getBody()).isEqualTo(null);
+		assertThat(result.getBody()).contains("status");
 	}
 
 	@Test
