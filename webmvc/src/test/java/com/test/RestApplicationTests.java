@@ -77,11 +77,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void staticResource() throws Exception {
-		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
-	}
-
-	@Test
 	public void wordsSSE() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
@@ -131,11 +126,10 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void timeoutJson() throws Exception {
+	public void timeout() throws Exception {
 		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/timeout"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
+				.exchange(RequestEntity.get(new URI("/timeout")).build(), String.class)
+				.getBody()).isEqualTo("foo");
 	}
 
 	@Test
@@ -203,11 +197,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void postMoreFoo() {
-		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("[FOO]");
-	}
-
-	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -215,25 +204,6 @@ public class RestApplicationTests {
 	@Test
 	public void convertGet() {
 		assertThat(rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
-	}
-
-	@Test
-	public void convertGetJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/entity/321"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("{\"value\":321}");
-	}
-
-	@Test
-	public void uppercaseJsonArray() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.post(new URI("/maps"))
-						.contentType(MediaType.APPLICATION_JSON)
-						// The new line in the middle is optional
-						.body("[{\"value\":\"foo\"},\n{\"value\":\"bar\"}]"),
-				String.class).getBody())
-						.isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
@@ -281,6 +251,11 @@ public class RestApplicationTests {
 			return flux.log().map(value -> ".." + value + "..");
 		}
 
+		@GetMapping("/wrap/{id}")
+		public Mono<String> wrapGet(@PathVariable int id) {
+			return Mono.just(id).log().map(value -> ".." + value + "..");
+		}
+
 		@PostMapping("/entity")
 		public Flux<Map<String, Object>> entity(@RequestBody Flux<Integer> flux) {
 			return flux.log().map(value -> Collections.singletonMap("value", value));
@@ -302,7 +277,7 @@ public class RestApplicationTests {
 
 		@PostMapping("/updates")
 		public ResponseEntity<Flux<String>> updates(@RequestBody Flux<String> flux) {
-			flux.cache();
+			flux = flux.cache();
 			flux.subscribe(value -> list.add(value));
 			return ResponseEntity.accepted().body(flux);
 		}
