@@ -25,8 +25,6 @@ import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.http.converter.ObjectToStringHttpMessageConverter;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -44,11 +42,6 @@ public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
 
 	@Autowired
 	private ApplicationContext context;
-
-	@Bean
-	public ObjectToStringHttpMessageConverter objectToStringHttpMessageConverter() {
-		return new ObjectToStringHttpMessageConverter(new DefaultConversionService());
-	}
 
 	@Bean
 	public FluxReturnValueHandler fluxReturnValueHandler(

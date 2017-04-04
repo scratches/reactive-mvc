@@ -72,8 +72,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		Object object = value;
 
 		try {
-			if (!MediaType.ALL.equals(mediaType)
-					&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+			if (isJson()) {
 				if (!this.firstElementWritten) {
 					if (!single) {
 						responseBodyEmitter.send("[");
@@ -104,8 +103,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		if (!completed) {
 			completed = true;
 			try {
-				if (!MediaType.ALL.equals(mediaType)
-						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (isJson()) {
 					if (!single) {
 						if (!this.firstElementWritten) {
 							responseBodyEmitter.send("[]");
@@ -133,8 +131,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		if (!completed) {
 			completed = true;
 			try {
-				if (!MediaType.ALL.equals(mediaType)
-						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (isJson()) {
 					if (!single) {
 						if (!this.firstElementWritten) {
 							responseBodyEmitter.send("[");
@@ -148,6 +145,10 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			}
 			responseBodyEmitter.complete();
 		}
+	}
+
+	private boolean isJson() {
+		return MediaType.APPLICATION_JSON.isCompatibleWith(mediaType);
 	}
 
 	class Complete implements Runnable {

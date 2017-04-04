@@ -144,7 +144,7 @@ public class RestApplicationTests {
 	public void sentences() throws Exception {
 		assertThat(rest
 				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
-				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				.getBody()).isEqualTo("[\"go\",\"home\"][\"come\",\"back\"]");
 	}
 
 	@Test
@@ -152,7 +152,7 @@ public class RestApplicationTests {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
 				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+						.isEqualTo("[\"go\",\"home\"][\"come\",\"back\"]");
 	}
 
 	@Test
@@ -164,7 +164,7 @@ public class RestApplicationTests {
 						String.class);
 		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 		assertThat(result.getHeaders().getContentType())
-				.isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
+				.isEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
