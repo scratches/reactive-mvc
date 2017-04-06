@@ -16,13 +16,13 @@
 package com.test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import com.test.RestApplicationTests.TestConfiguration;
 
@@ -118,8 +118,9 @@ public class RestApplicationTests {
 
 	@Test
 	public void updates() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("onetwo");
@@ -179,21 +180,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void uppercase() {
-		assertThat(rest.postForObject("/uppercase", "foo\nbar", String.class))
-				.isEqualTo("[FOO][BAR]");
-	}
-
-	@Test
-	public void transform() {
-		assertThat(rest.postForObject("/transform", "foo\nbar", String.class))
-				.isEqualTo("[FOO][BAR]");
-	}
-
-	@Test
-	public void postMore() {
-		assertThat(rest.postForObject("/post/more", "foo\nbar", String.class))
-				.isEqualTo("[FOO][BAR]");
+	public void uppercase() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
@@ -211,9 +202,8 @@ public class RestApplicationTests {
 		assertThat(rest
 				.exchange(RequestEntity.post(new URI("/maps"))
 						.contentType(MediaType.APPLICATION_JSON)
-						// TODO: make this work without newline separator
-						.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"), String.class)
-				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
+						.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class)
+				.getBody()).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
@@ -222,7 +212,7 @@ public class RestApplicationTests {
 				rest.exchange(
 						RequestEntity.post(new URI("/uppercase")).accept(EVENT_STREAM)
 								.contentType(EVENT_STREAM).body(sse("foo", "bar")),
-						String.class).getBody()).isEqualTo(sse("[FOO]", "[BAR]"));
+						String.class).getBody()).isEqualTo(sse("(FOO)", "(BAR)"));
 	}
 
 	private String sse(String... values) {
@@ -237,8 +227,9 @@ public class RestApplicationTests {
 		private List<String> list = new ArrayList<>();
 
 		@PostMapping({ "/uppercase", "/transform", "/post/more" })
-		public Flux<String> uppercase(@RequestBody Flux<String> flux) {
-			return flux.log().map(value -> "[" + value.trim().toUpperCase() + "]");
+		public Flux<String> uppercase(@RequestBody List<String> list) {
+			Flux<String> flux = Flux.fromIterable(list);
+			return flux.log().map(value -> "(" + value.trim().toUpperCase() + ")");
 		}
 
 		@GetMapping("/uppercase/{id}")
@@ -247,7 +238,8 @@ public class RestApplicationTests {
 		}
 
 		@PostMapping("/wrap")
-		public Flux<String> wrap(@RequestBody Flux<Integer> flux) {
+		public Flux<String> wrap(@RequestBody List<String> list) {
+			Flux<String> flux = Flux.fromIterable(list);
 			return flux.log().map(value -> ".." + value + "..");
 		}
 
@@ -257,13 +249,15 @@ public class RestApplicationTests {
 		}
 
 		@PostMapping("/entity")
-		public Flux<Map<String, Object>> entity(@RequestBody Flux<Integer> flux) {
+		public Flux<Map<String, Object>> entity(@RequestBody List<Integer> list) {
+			Flux<Integer> flux = Flux.fromIterable(list);
 			return flux.log().map(value -> Collections.singletonMap("value", value));
 		}
 
 		@PostMapping("/maps")
 		public Flux<Map<String, String>> maps(
-				@RequestBody Flux<HashMap<String, String>> flux) {
+				@RequestBody List<HashMap<String, String>> list) {
+			Flux<HashMap<String, String>> flux = Flux.fromIterable(list);
 			return flux.map(value -> {
 				value.put("value", value.get("value").trim().toUpperCase());
 				return value;
@@ -276,9 +270,10 @@ public class RestApplicationTests {
 		}
 
 		@PostMapping("/updates")
-		public ResponseEntity<Flux<String>> updates(@RequestBody Flux<String> flux) {
+		public ResponseEntity<Flux<String>> updates(@RequestBody List<String> list) {
+			Flux<String> flux = Flux.fromIterable(list);
 			flux = flux.cache();
-			flux.subscribe(value -> list.add(value));
+			flux.subscribe(value -> this.list.add(value));
 			return ResponseEntity.accepted().body(flux);
 		}
 
@@ -298,10 +293,10 @@ public class RestApplicationTests {
 		}
 
 		@GetMapping("/timeout")
-		public Supplier<Flux<String>> timeout() {
-			return () -> Flux.create(emitter -> {
+		public Flux<String> timeout() {
+			return Flux.defer(() -> Flux.<String>create(emitter -> {
 				emitter.next("foo");
-			});
+			}).timeout(Duration.ofMillis(100L), Flux.empty()));
 		}
 
 		@GetMapping("/sentences")
