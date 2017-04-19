@@ -18,15 +18,14 @@ package org.springframework.cloud.function.web.flux;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import reactor.core.publisher.Flux;
@@ -38,29 +37,23 @@ import reactor.core.publisher.Flux;
 @Configuration
 @ConditionalOnWebApplication
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
-public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
-
-	@Autowired
-	private ApplicationContext context;
+public class ReactorAutoConfiguration {
 
 	@Bean
-	public FluxReturnValueHandler fluxReturnValueHandler(
-			HttpMessageConverters converters) {
-		return new FluxReturnValueHandler(converters.getConverters());
+	public FluxHttpMessageConverter fluxHttpMessageConverter() {
+		return new FluxHttpMessageConverter();
 	}
 
-	@Configuration
-	protected static class FluxMessageConverterConfiguration {
-
-		@Bean
-		public FluxHttpMessageConverter fluxHttpMessageConverter() {
-			return new FluxHttpMessageConverter();
-		}
+	@Bean
+	public WebMvcConfigurer fluxReturnValueConfigurer(HttpMessageConverters converters) {
+		return new WebMvcConfigurerAdapter() {
+			@Override
+			public void addReturnValueHandlers(
+					List<HandlerMethodReturnValueHandler> returnValueHandlers) {
+				returnValueHandlers
+						.add(new FluxReturnValueHandler(converters.getConverters()));
+			}
+		};
 	}
 
-	@Override
-	public void addReturnValueHandlers(
-			List<HandlerMethodReturnValueHandler> returnValueHandlers) {
-		returnValueHandlers.add(context.getBean(FluxReturnValueHandler.class));
-	}
 }

@@ -95,17 +95,6 @@ public class ReactiveApplicationTests {
 				.isCompatibleWith(MediaType.APPLICATION_JSON)).isTrue();
 	}
 
-	@Test
-	public void sentencesAcceptSse() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
-				String.class);
-		assertThat(result.getBody())
-				.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
-		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM))
-				.isTrue();
-	}
-
 	private String sse(String... values) {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
